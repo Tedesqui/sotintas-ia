@@ -1,36 +1,42 @@
-export const config = {
-  maxDuration: 10,
-};
+// api/identify-color.js
+// Usando sintaxe padrão do Node.js para compatibilidade máxima
 
-export default async function handler(request, response) {
-  // Corrige problema de CORS e Métodos
-  response.setHeader('Access-Control-Allow-Credentials', true);
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+module.exports = async (req, res) => {
+  // 1. Configurar CORS manualmente (Para aceitar requisições do seu site)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  if (request.method === 'OPTIONS') {
-    response.status(200).end();
+  // 2. Responder imediatamente ao "Preflight" (OPTIONS) do navegador
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
     return;
   }
 
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: 'Method Not Allowed' });
+  // 3. Bloquear qualquer coisa que não seja POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido. Use POST.' });
   }
 
   try {
-    const { image } = request.body;
+    const { image } = req.body;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    if (!image) return response.status(400).json({ error: 'Imagem não fornecida' });
-    if (!apiKey) return response.status(500).json({ error: 'API Key não configurada' });
+    if (!image) return res.status(400).json({ error: 'Imagem não recebida.' });
+    if (!apiKey) return res.status(500).json({ error: 'Chave da API não configurada na Vercel.' });
 
+    // 4. Chamada à OpenAI
     const prompt = `
-      Analise a cor da parede.
-      Responda ESTRITAMENTE um JSON:
-      { "tonalidade": "Nome Exato (ex: Azul Marinho)", "categoria": "azul" }
-      Categorias possiveis: [branco, azul, verde, amarelo, vermelho, cinza].
-      Se nada bater, use 'padrao'.
+      Você é um especialista em tintas. Analise a cor da parede nesta imagem.
+      Responda APENAS com este JSON exato, sem markdown:
+      { "tonalidade": "Nome Criativo da Cor", "categoria": "cor_base" }
+      
+      As categorias permitidas são APENAS: [branco, azul, verde, amarelo, vermelho, cinza].
+      Se não identificar, use "padrao".
     `;
 
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -50,18 +56,31 @@ export default async function handler(request, response) {
             ]
           }
         ],
-        max_tokens: 50,
+        max_tokens: 60,
         response_format: { type: "json_object" }
       })
     });
 
     const data = await openAiResponse.json();
-    if (data.error) throw new Error(data.error.message);
 
-    const content = JSON.parse(data.choices[0].message.content);
-    return response.status(200).json(content);
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    // 5. Tratamento de resposta
+    let content;
+    try {
+      content = JSON.parse(data.choices[0].message.content);
+    } catch (e) {
+      // Caso a IA não mande JSON perfeito, forçamos um fallback
+      console.error("Erro ao ler JSON da IA:", data.choices[0].message.content);
+      content = { tonalidade: "Cor Identificada", categoria: "padrao" };
+    }
+
+    return res.status(200).json(content);
 
   } catch (error) {
-    return response.status(500).json({ error: error.message });
+    console.error("Erro no Backend:", error);
+    return res.status(500).json({ error: error.message || "Erro interno no servidor." });
   }
-}
+};
