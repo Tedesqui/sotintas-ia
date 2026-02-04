@@ -10,30 +10,31 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
-    /* Reset e Fontes */
-    body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    /* Estilos Gerais */
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
-    /* Mensagem Inicial */
     #initialMessage {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 20px; background-color: rgba(0, 0, 0, 0.9); color: white; border-radius: 12px;
+      padding: 20px; background-color: rgba(0, 0, 0, 0.85); color: white; border-radius: 12px;
       text-align: center; font-size: 16px; z-index: 1001; max-width: 80%;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
       transition: opacity 0.5s;
     }
 
-    /* Botão Play/Pause */
+    /* Botão Play/Pause (Estilo Chapinha) */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
-      background-color: rgba(0, 0, 0, 0.5); border: none; border-radius: 8px; cursor: pointer;
-      transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; color: white;
-      backdrop-filter: blur(4px);
+      background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
+      transition: transform 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
+      display: inline-flex; align-items: center; gap: 4px; color: white;
     }
     #playPauseButton.is-playing { padding: 10px 20px; }
-    #playPauseButton.is-paused { padding: 6px 12px; }
-    #playPauseButton .icon { color: #28a745; font-size: 24px; }
-    #playPauseButton .text { font-size: 16px; font-weight: 600; }
-    #playPauseButton:hover { transform: scale(1.05); background-color: rgba(0,0,0,0.7); }
+    #playPauseButton.is-paused { padding: 2px 6px; }
+    #playPauseButton .icon { color: #28a745; font-size: 44px; position: relative; bottom: 3px; left: 5px; }
+    #playPauseButton.is-playing .icon { font-size: 24px; bottom: 0; left: 0; margin-right: 5px; }
+    #playPauseButton .text { font-size: 16px; color: white; }
+    #playPauseButton.rotating { transform: rotate(360deg); }
+    #playPauseButton:hover { background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05); }
 
     /* Botão IA */
     #scanColorButton {
@@ -41,32 +42,31 @@
       z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: white; border: none; border-radius: 50px;
       padding: 14px 28px; font-weight: bold; font-size: 16px;
-      cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
+      cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
       display: flex; align-items: center; gap: 10px;
       transition: transform 0.2s ease;
     }
     #scanColorButton:active { transform: translateX(-50%) scale(0.95); }
 
-    /* Notificação Elegante (Toast) - Substitui o Alert */
+    /* Notificação (Sem Alert) */
     #notificationToast {
       position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.95); color: #1f2937;
       padding: 16px 24px; border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       z-index: 2000; display: flex; flex-direction: column; align-items: center;
       transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
       width: 85%; max-width: 350px; text-align: center;
       border-left: 5px solid #3b82f6;
     }
     #notificationToast.show { top: 30px; }
-    #notificationToast.error { border-left-color: #ef4444; }
     #notificationToast h3 { margin: 0 0 4px 0; font-size: 18px; color: #111827; }
     #notificationToast p { margin: 0; font-size: 14px; color: #4b5563; }
 
     /* Loading */
     #loadingOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
       z-index: 2000; flex-direction: column; align-items: center; justify-content: center;
       color: white;
     }
@@ -81,12 +81,13 @@
     #footerSocial {
       position: fixed; bottom: 0; left: 0; right: 0; padding: 20px 0;
       display: flex; justify-content: center; gap: 40px; z-index: 999;
-      background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+      background-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 19.5px rgba(0, 0, 0, 0.47);
     }
-    #footerSocial a { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; text-decoration: none; transition: transform 0.2s; }
-    #footerSocial svg { width: 100%; height: 100%; drop-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    #footerSocial a:hover { transform: scale(1.1); }
-    #footerSocial .facebook svg { fill: #3b5998; }
+    #footerSocial a { display: flex; align-items: center; justify-content: center; width: 34.56px; height: 34.56px; text-decoration: none; }
+    #footerSocial svg { width: 34.56px; height: 34.56px; transition: transform 0.3s ease; }
+    #footerSocial a:hover svg { transform: scale(1.1); }
+    #footerSocial .facebook svg { fill: #00008B; }
     #footerSocial .instagram svg { fill: #833AB4; }
     #footerSocial .whatsapp svg { fill: #25D366; }
   </style>
@@ -96,16 +97,16 @@
   
   <div id="notificationToast">
     <h3 id="toastTitle">Sucesso</h3>
-    <p id="toastMessage">Operação concluída.</p>
+    <p id="toastMessage">Cor identificada.</p>
   </div>
 
   <div id="loadingOverlay">
     <div class="spinner"></div>
-    <div id="loadingText" style="font-weight: 500;">Consultando IA...</div>
+    <div id="loadingText" style="font-weight: 500;">Analisando ambiente...</div>
   </div>
 
   <div id="initialMessage">
-    Aponte para a parede e clique em <b>"Identificar Cor"</b>
+    Aponte seu celular para frente para ver o vídeo.
   </div>
 
   <button id="playPauseButton" class="is-paused">
@@ -113,7 +114,7 @@
   </button>
 
   <button id="scanColorButton">
-    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
     </svg>
@@ -157,29 +158,29 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
 
-    // Função de Notificação (Substitui o Alert)
-    function showNotification(title, message, isError = false) {
+    function showNotification(title, message) {
       const toast = document.getElementById('notificationToast');
       document.getElementById('toastTitle').innerText = title;
       document.getElementById('toastMessage').innerText = message;
-      
-      if(isError) toast.classList.add('error');
-      else toast.classList.remove('error');
-
       toast.classList.add('show');
-      setTimeout(() => { toast.classList.remove('show'); }, 5000);
+      setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
+    // --- INTERAÇÃO COM BACKEND ---
     scanButton.addEventListener('click', async () => {
-      if (!video.paused) { video.pause(); updatePlayButtonState(false); }
+      if (!video.paused) {
+        video.pause();
+        updatePlayButtonState(false);
+      }
 
       loadingOverlay.style.display = 'flex';
       loadingText.innerText = "Analisando ambiente...";
 
       try {
         const webcamVideo = document.querySelector('video:not(#Video_Asset_0)'); 
-        if (!webcamVideo) throw new Error("Câmera não disponível.");
+        if (!webcamVideo) throw new Error("Câmera não iniciada.");
 
+        // Captura
         const canvas = document.getElementById('snapshotCanvas');
         const scale = 512 / webcamVideo.videoWidth;
         canvas.width = 512;
@@ -189,58 +190,53 @@
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
         const base64Image = canvas.toDataURL('image/jpeg', 0.6); 
 
-        // Tenta enviar para o backend
+        // Envia para API Vercel
         const response = await fetch('/api/identify-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64Image })
         });
 
-        const responseText = await response.text();
+        if (!response.ok) throw new Error("Falha na IA. Verifique a API Key.");
 
-        if (!response.ok) {
-           // Lógica para detectar erros 405, 404, 500
-           if(response.status === 405) {
-             throw new Error("Erro 405: O Backend não está aceitando POST. Verifique se o arquivo está na pasta 'api/' no GitHub.");
-           } else if(response.status === 404) {
-             throw new Error("Erro 404: Arquivo de Backend não encontrado na Vercel.");
-           }
-           
-           try {
-             const errorJson = JSON.parse(responseText);
-             throw new Error(errorJson.error || "Erro desconhecido na API");
-           } catch (e) {
-             if(e.message.includes("Erro")) throw e;
-             throw new Error(`Erro do Servidor (${response.status})`);
-           }
-        }
-
-        const data = JSON.parse(responseText);
+        const data = await response.json();
         
-        showNotification("Identificado!", `${data.tonalidade} (${data.categoria})`);
+        showNotification(data.tonalidade.toUpperCase(), `Base: ${data.categoria.toUpperCase()}.`);
 
         const cleanCategory = data.categoria.toLowerCase().trim();
         const newSrc = colorVideoMap[cleanCategory] || colorVideoMap['padrao'];
         video.src = newSrc;
         video.load(); 
 
+        // --- LÓGICA DE POSICIONAMENTO E ANIMAÇÃO (CHAPINHA) ---
         const videoHolder = document.getElementById('video-holder');
+        
+        // 1. Torna visível
         videoHolder.setAttribute('visible', 'true');
-        // Reseta posição
+        
+        // 2. Reseta a posição para longe (Z = -10)
         videoHolder.setAttribute('position', '0 1.7 -10');
-        // Animação Chapinha
+        
+        // 3. Aplica a animação "elástica" para vir para perto (Z = -4)
         videoHolder.setAttribute('animation', {
-          property: 'position', to: '0 1.7 -4', dur: 1500, easing: 'easeOutElastic'
+          property: 'position',
+          to: '0 1.7 -4',
+          dur: 1500,
+          easing: 'easeOutElastic'
         });
 
+        // 4. Play
         setTimeout(() => {
-          video.play().then(() => { updatePlayButtonState(true); }).catch(() => updatePlayButtonState(false));
+          video.play().then(() => {
+            updatePlayButtonState(true);
+          }).catch(e => {
+            updatePlayButtonState(false);
+          });
         }, 500);
 
       } catch (error) {
         console.error(error);
-        // Exibe erro no TOAST, não no Alert
-        showNotification("Erro", error.message, true);
+        showNotification("Erro", "Não foi possível identificar.");
       } finally {
         loadingOverlay.style.display = 'none';
       }
@@ -260,12 +256,23 @@
 
     window.addEventListener('load', () => {
       const message = document.getElementById('initialMessage');
-      if (message) setTimeout(() => { message.style.display = 'none'; }, 5000);
+      if (message) {
+        setTimeout(() => {
+          message.style.opacity = '0';
+          setTimeout(() => message.style.display = 'none', 500);
+        }, 5000); 
+      }
     });
 
     playPauseButton.addEventListener('click', () => {
-      if (video.paused) { video.muted = false; video.play(); updatePlayButtonState(true); } 
-      else { video.pause(); updatePlayButtonState(false); }
+      if (video.paused) {
+        video.muted = false; 
+        video.play();
+        updatePlayButtonState(true);
+      } else {
+        video.pause();
+        updatePlayButtonState(false);
+      }
       playPauseButton.classList.add('rotating');
       setTimeout(() => playPauseButton.classList.remove('rotating'), 300);
     });
