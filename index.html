@@ -167,7 +167,7 @@
       setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
-    // --- LÓGICA COM DIAGNÓSTICO DE ERRO ---
+    // --- LÓGICA CORRIGIDA (Leitura Segura do Stream) ---
     scanButton.addEventListener('click', async () => {
       if (!video.paused) { video.pause(); updatePlayButtonState(false); }
 
@@ -176,7 +176,7 @@
 
       try {
         const webcamVideo = document.querySelector('video:not(#Video_Asset_0)'); 
-        if (!webcamVideo) throw new Error("ERRO 01: Câmera não encontrada ou bloqueada.");
+        if (!webcamVideo) throw new Error("ERRO 01: Câmera não encontrada. Permita o acesso.");
 
         const canvas = document.getElementById('snapshotCanvas');
         const scale = 512 / webcamVideo.videoWidth;
@@ -195,29 +195,27 @@
           body: JSON.stringify({ image: base64Image })
         });
 
-        // --- TRATAMENTO DE ERRO DETALHADO ---
+        // LÊ O CORPO UMA VEZ SÓ COMO TEXTO
+        const responseText = await response.text();
+
         if (!response.ok) {
-           let errorText;
+           // Tenta ver se o texto é um erro JSON
            try {
-             // Tenta ler o JSON de erro
-             const errData = await response.json();
-             errorText = errData.error || JSON.stringify(errData);
+             const errorJson = JSON.parse(responseText);
+             if(errorJson.error) throw new Error(errorJson.error);
            } catch (e) {
-             // Se falhar o JSON, pega o texto puro (comum em erros 404/500 da Vercel)
-             const rawText = await response.text();
-             errorText = `Status ${response.status}: ${rawText.substring(0, 50)}...`;
-           }
-           
-           if(response.status === 404) {
-             throw new Error("ERRO 404: Backend não encontrado. Verifique se a pasta 'api' está na raiz do GitHub.");
-           } else if(response.status === 500) {
-             throw new Error("ERRO 500: Erro interno. Verifique a API Key na Vercel.");
-           } else {
-             throw new Error(`ERRO SERVIDOR: ${errorText}`);
+             // Se não for JSON, é um erro HTML (provavelmente 404 ou 500)
+             if (response.status === 404) {
+               throw new Error("ERRO 404 (Não encontrado): A pasta 'api' não existe na Vercel.");
+             } else if (response.status === 500) {
+               throw new Error("ERRO 500 (Servidor): Verifique a API Key da OpenAI no painel da Vercel.");
+             }
+             throw new Error(`Erro do Servidor (${response.status}): ${responseText.substring(0,50)}...`);
            }
         }
 
-        const data = await response.json();
+        // Se deu tudo certo, transforma o texto em objeto
+        const data = JSON.parse(responseText);
         
         showNotification(data.tonalidade.toUpperCase(), `Base: ${data.categoria.toUpperCase()}.`);
 
@@ -226,7 +224,6 @@
         video.src = newSrc;
         video.load(); 
 
-        // Animação do Chapinha
         const videoHolder = document.getElementById('video-holder');
         videoHolder.setAttribute('visible', 'true');
         videoHolder.setAttribute('position', '0 1.7 -10');
@@ -240,7 +237,6 @@
 
       } catch (error) {
         console.error(error);
-        // Exibe o erro real na tela para você saber o que arrumar
         alert(error.message); 
       } finally {
         loadingOverlay.style.display = 'none';
