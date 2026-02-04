@@ -22,31 +22,25 @@
       transition: opacity 0.5s;
     }
 
-    /* --- Botão Play/Pause (Restaurado ao Original) --- */
+    /* --- Botão Play/Pause --- */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
       background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
       transition: transform 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
       display: inline-flex; align-items: center; gap: 4px; color: white;
     }
-    /* Estados do botão (Tamanho dinâmico) */
     #playPauseButton.is-playing { padding: 10px 20px; }
     #playPauseButton.is-paused { padding: 2px 6px; }
 
-    /* Ícone e Texto */
     #playPauseButton .icon { color: #28a745; transition: font-size 0.3s ease; }
     #playPauseButton.is-playing .icon { font-size: 24px; margin-right: 5px; }
-    #playPauseButton.is-paused .icon { 
-      font-size: 44px; position: relative; bottom: 3px; left: 2px; 
-    }
+    #playPauseButton.is-paused .icon { font-size: 44px; position: relative; bottom: 3px; left: 2px; }
     #playPauseButton .text { font-size: 16px; color: white; }
 
     #playPauseButton.rotating { transform: rotate(360deg); }
-    #playPauseButton:hover {
-      background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05);
-    }
+    #playPauseButton:hover { background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05); }
 
-    /* --- Botão IA (Flutuante Inferior) --- */
+    /* --- Botão IA --- */
     #scanColorButton {
       position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
       z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -96,10 +90,8 @@
     #footerSocial a { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: transform 0.2s; }
     #footerSocial a:hover { transform: scale(1.1); }
     #footerSocial svg { width: 100%; height: 100%; drop-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    
-    /* Cores Restauradas */
     #footerSocial .facebook svg { fill: #00008B; }
-    #footerSocial .instagram svg { fill: #833AB4; } /* Roxo original */
+    #footerSocial .instagram svg { fill: #833AB4; }
     #footerSocial .whatsapp svg { fill: #25D366; }
   </style>
 </head>
@@ -139,8 +131,8 @@
       <video id="Video_Asset_0" src="videos/celia.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
     </a-assets>
 
-    <a-entity id="video-holder" position="0 1.6 -4" scale="0 0 0" look-at="[camera]">
-       <a-video width="3" height="3" src="#Video_Asset_0" color="#FFFFFF" loop></a-video>
+    <a-entity id="video-holder" position="0 0 -100" scale="0 0 0">
+       <a-video width="2.53" height="4.5" src="#Video_Asset_0" look-at="[camera]" color="#FFFFFF" loop></a-video>
     </a-entity>
 
     <a-camera gps-camera rotation-reader></a-camera>
@@ -169,7 +161,6 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
 
-    // --- NOTIFICAÇÃO (TOAST) ---
     function showNotification(title, message) {
       const toast = document.getElementById('notificationToast');
       document.getElementById('toastTitle').innerText = title;
@@ -178,41 +169,35 @@
       setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
-    // --- REPOSICIONAMENTO DO VÍDEO NA FRENTE DO USUÁRIO ---
+    // --- POSICIONAMENTO CORRIGIDO (USANDO VETOR LOCAL) ---
     function placeVideoInFront() {
       const videoEl = document.querySelector('#video-holder');
       const cameraEl = document.querySelector('a-camera');
 
       if (!videoEl || !cameraEl) return;
 
-      // 1. Pega a posição e rotação da câmera
       const cameraObj = cameraEl.object3D;
-      const position = new THREE.Vector3();
-      const direction = new THREE.Vector3();
       
-      cameraObj.getWorldPosition(position);
-      cameraObj.getWorldDirection(direction);
+      // Define uma distância maior: 6 metros
+      const distance = 6; 
+      
+      // Cria um vetor apontando para a "frente" no espaço local da câmera (eixo Z negativo)
+      const localForward = new THREE.Vector3(0, 0, -distance);
+      
+      // Aplica a rotação da câmera a esse vetor
+      localForward.applyQuaternion(cameraObj.quaternion);
+      
+      // Soma com a posição atual da câmera para obter a posição final no mundo
+      const finalPosition = new THREE.Vector3().copy(cameraObj.position).add(localForward);
+      
+      // Aplica ao objeto do vídeo
+      videoEl.object3D.position.copy(finalPosition);
 
-      // 2. Calcula posição 4 metros à frente
-      // Multiplica direção por -4 (eixo Z é invertido no WebGL)
-      direction.multiplyScalar(4); 
-      position.add(direction); 
-      
-      // Ajuste de altura para ficar no nível dos olhos aprox
-      // Se a câmera estiver muito baixa/alta, normaliza um pouco
-      position.y = cameraObj.position.y + 0.5; 
-
-      // 3. Aplica ao vídeo
-      videoEl.object3D.position.copy(position);
-      
-      // 4. Faz o vídeo virar para a câmera
-      videoEl.object3D.lookAt(cameraObj.position);
-      
-      // 5. Animação de entrada (Escala de 0 para 1)
+      // Animação de entrada (Crescer)
       videoEl.setAttribute('animation', {
         property: 'scale',
         to: '1 1 1',
-        dur: 1000,
+        dur: 1500,
         easing: 'easeOutElastic'
       });
     }
@@ -231,7 +216,6 @@
         const webcamVideo = document.querySelector('video:not(#Video_Asset_0)'); 
         if (!webcamVideo) throw new Error("Câmera não iniciada.");
 
-        // Captura
         const canvas = document.getElementById('snapshotCanvas');
         const scale = 512 / webcamVideo.videoWidth;
         canvas.width = 512;
@@ -241,42 +225,33 @@
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
         const base64Image = canvas.toDataURL('image/jpeg', 0.6); 
 
-        // Envia para API
         const response = await fetch('/api/identify-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64Image })
         });
 
-        if (!response.ok) {
-           throw new Error("Erro de conexão com servidor.");
-        }
+        if (!response.ok) throw new Error("Erro de conexão com servidor.");
 
         const data = await response.json();
-        
-        // --- SUCESSO ---
         
         showNotification(
           data.tonalidade.toUpperCase(), 
           `Base: ${data.categoria.toUpperCase()}.`
         );
 
-        // Configura o source do vídeo
         const cleanCategory = data.categoria.toLowerCase().trim();
         const newSrc = colorVideoMap[cleanCategory] || colorVideoMap['padrao'];
         video.src = newSrc;
         video.load(); 
 
-        // Traz o vídeo para a frente e faz ele aparecer
+        // Reposiciona o vídeo corretamente na frente
         placeVideoInFront();
 
-        // Play
-        // Pequeno delay para garantir que o load() terminou
         setTimeout(() => {
           video.play().then(() => {
             updatePlayButtonState(true);
           }).catch(e => {
-            console.log("Autoplay bloqueado pelo navegador");
             updatePlayButtonState(false);
           });
         }, 500);
@@ -289,7 +264,6 @@
       }
     });
 
-    // --- Controles UI ---
     function updatePlayButtonState(isPlaying) {
       if (isPlaying) {
         playPauseButton.innerHTML = '<span class="icon">⏸︎</span> <span class="text">Pause</span>';
