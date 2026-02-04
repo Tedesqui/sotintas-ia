@@ -7,13 +7,13 @@
 
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
     /* --- Estilos Gerais --- */
-    body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
-    /* Mensagem Inicial */
+    /* Mensagem Inicial (Estilo Chapinha + Modernização) */
     #initialMessage {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px; background-color: rgba(0, 0, 0, 0.85); color: white; border-radius: 12px;
@@ -22,7 +22,7 @@
       transition: opacity 0.5s;
     }
 
-    /* --- Botão Play/Pause --- */
+    /* --- Botão Play/Pause (Estilo Chapinha) --- */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
       background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
@@ -34,15 +34,19 @@
 
     #playPauseButton .icon { color: #28a745; transition: font-size 0.3s ease; }
     #playPauseButton.is-playing .icon { font-size: 24px; margin-right: 5px; }
-    #playPauseButton.is-paused .icon { font-size: 44px; position: relative; bottom: 3px; left: 2px; }
+    #playPauseButton.is-paused .icon { 
+      font-size: 44px; position: relative; bottom: 3px; left: 5px; 
+    }
     #playPauseButton .text { font-size: 16px; color: white; }
 
     #playPauseButton.rotating { transform: rotate(360deg); }
-    #playPauseButton:hover { background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05); }
+    #playPauseButton:hover {
+      background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05);
+    }
 
-    /* --- Botão IA --- */
+    /* --- Botão IA (Flutuante Inferior) --- */
     #scanColorButton {
-      position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
       z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: white; border: none; border-radius: 50px;
       padding: 14px 28px; font-weight: bold; font-size: 16px;
@@ -81,15 +85,16 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* --- Footer Social --- */
+    /* --- Footer Social (Estilo Chapinha) --- */
     #footerSocial {
-      position: fixed; bottom: 0; left: 0; right: 0; padding: 25px 0;
+      position: fixed; bottom: 0; left: 0; right: 0; padding: 20px 0;
       display: flex; justify-content: center; gap: 40px; z-index: 999;
-      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      background-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 19.5px rgba(0, 0, 0, 0.47);
     }
-    #footerSocial a { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: transform 0.2s; }
-    #footerSocial a:hover { transform: scale(1.1); }
-    #footerSocial svg { width: 100%; height: 100%; drop-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    #footerSocial a { display: flex; align-items: center; justify-content: center; width: 34.56px; height: 34.56px; text-decoration: none; }
+    #footerSocial svg { width: 34.56px; height: 34.56px; transition: transform 0.3s ease; }
+    #footerSocial a:hover svg { transform: scale(1.1); }
     #footerSocial .facebook svg { fill: #00008B; }
     #footerSocial .instagram svg { fill: #833AB4; }
     #footerSocial .whatsapp svg { fill: #25D366; }
@@ -126,16 +131,16 @@
 
   <canvas id="snapshotCanvas" style="display:none;"></canvas>
 
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+  <a-scene vr-mode-ui="enabled: false">
     <a-assets>
       <video id="Video_Asset_0" src="videos/celia.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
     </a-assets>
 
-    <a-entity id="video-holder" position="0 0 -100" scale="0 0 0">
-       <a-video width="2.53" height="4.5" src="#Video_Asset_0" look-at="[camera]" color="#FFFFFF" loop></a-video>
+    <a-entity id="video-holder" position="0 1.7 -10" visible="false">
+       <a-video width="3" height="4.5" src="#Video_Asset_0" look-at="[camera]" color="#FFFFFF" loop></a-video>
     </a-entity>
 
-    <a-camera gps-camera rotation-reader></a-camera>
+    <a-camera id="camera1"></a-camera>
   </a-scene>
 
   <div id="footerSocial">
@@ -169,40 +174,7 @@
       setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
-    // --- POSICIONAMENTO CORRIGIDO (USANDO VETOR LOCAL) ---
-    function placeVideoInFront() {
-      const videoEl = document.querySelector('#video-holder');
-      const cameraEl = document.querySelector('a-camera');
-
-      if (!videoEl || !cameraEl) return;
-
-      const cameraObj = cameraEl.object3D;
-      
-      // Define uma distância maior: 6 metros
-      const distance = 6; 
-      
-      // Cria um vetor apontando para a "frente" no espaço local da câmera (eixo Z negativo)
-      const localForward = new THREE.Vector3(0, 0, -distance);
-      
-      // Aplica a rotação da câmera a esse vetor
-      localForward.applyQuaternion(cameraObj.quaternion);
-      
-      // Soma com a posição atual da câmera para obter a posição final no mundo
-      const finalPosition = new THREE.Vector3().copy(cameraObj.position).add(localForward);
-      
-      // Aplica ao objeto do vídeo
-      videoEl.object3D.position.copy(finalPosition);
-
-      // Animação de entrada (Crescer)
-      videoEl.setAttribute('animation', {
-        property: 'scale',
-        to: '1 1 1',
-        dur: 1500,
-        easing: 'easeOutElastic'
-      });
-    }
-
-    // --- LÓGICA PRINCIPAL ---
+    // --- LÓGICA DE CAPTURA E IA ---
     scanButton.addEventListener('click', async () => {
       if (!video.paused) {
         video.pause();
@@ -213,9 +185,12 @@
       loadingText.innerText = "Analisando cores e ambiente...";
 
       try {
+        // Tenta pegar o elemento de vídeo gerado pelo AR.js (geralmente é o único vídeo sem ID específico)
         const webcamVideo = document.querySelector('video:not(#Video_Asset_0)'); 
+        
         if (!webcamVideo) throw new Error("Câmera não iniciada.");
 
+        // Captura
         const canvas = document.getElementById('snapshotCanvas');
         const scale = 512 / webcamVideo.videoWidth;
         canvas.width = 512;
@@ -225,6 +200,7 @@
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
         const base64Image = canvas.toDataURL('image/jpeg', 0.6); 
 
+        // Envia para API
         const response = await fetch('/api/identify-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -235,6 +211,7 @@
 
         const data = await response.json();
         
+        // --- SUCESSO ---
         showNotification(
           data.tonalidade.toUpperCase(), 
           `Base: ${data.categoria.toUpperCase()}.`
@@ -245,9 +222,25 @@
         video.src = newSrc;
         video.load(); 
 
-        // Reposiciona o vídeo corretamente na frente
-        placeVideoInFront();
+        // --- ATIVA A ANIMAÇÃO SUAVE (ESTILO CHAPINHA) ---
+        const videoHolder = document.getElementById('video-holder');
+        
+        // 1. Torna visível
+        videoHolder.setAttribute('visible', 'true');
+        
+        // 2. Reseta a posição para longe (-10) para garantir o efeito
+        videoHolder.setAttribute('position', '0 1.7 -10');
+        
+        // 3. Inicia a animação para vir até a frente (-4)
+        // Isso cria aquele efeito "elástico" suave que o outro projeto tem
+        videoHolder.setAttribute('animation', {
+          property: 'position',
+          to: '0 1.7 -4',
+          dur: 1500,
+          easing: 'easeOutElastic'
+        });
 
+        // 4. Play no vídeo
         setTimeout(() => {
           video.play().then(() => {
             updatePlayButtonState(true);
