@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>𝐒𝐎𝐓𝐈𝐍𝐓𝐀𝐒 𝐈𝐀 𝐇𝐎𝐋𝐎𝐆𝐑𝐀𝐌𝐀</title>
+  <title>VEREADOR CHARLES NEVES HOLOGRAMA - IA</title>
 
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
@@ -21,7 +21,7 @@
       transition: opacity 0.5s;
     }
 
-    /* Botão Play/Pause (Estilo Chapinha) */
+    /* Botão Play/Pause */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
       background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
@@ -48,7 +48,7 @@
     }
     #scanColorButton:active { transform: translateX(-50%) scale(0.95); }
 
-    /* Notificação (Sem Alert) */
+    /* Notificação Toast (Sem Alert) */
     #notificationToast {
       position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.95); color: #1f2937;
@@ -60,6 +60,7 @@
       border-left: 5px solid #3b82f6;
     }
     #notificationToast.show { top: 30px; }
+    #notificationToast.error { border-left-color: #ef4444; }
     #notificationToast h3 { margin: 0 0 4px 0; font-size: 18px; color: #111827; }
     #notificationToast p { margin: 0; font-size: 14px; color: #4b5563; }
 
@@ -106,7 +107,7 @@
   </div>
 
   <div id="initialMessage">
-    Aponte seu celular para frente para ver o vídeo.
+    Aponte para a parede e clique em <b>"Identificar Cor"</b>
   </div>
 
   <button id="playPauseButton" class="is-paused">
@@ -158,15 +159,16 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
 
-    function showNotification(title, message) {
+    function showNotification(title, message, isError = false) {
       const toast = document.getElementById('notificationToast');
       document.getElementById('toastTitle').innerText = title;
       document.getElementById('toastMessage').innerText = message;
+      if(isError) toast.classList.add('error');
+      else toast.classList.remove('error');
       toast.classList.add('show');
       setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
-    // --- INTERAÇÃO COM BACKEND ---
     scanButton.addEventListener('click', async () => {
       if (!video.paused) {
         video.pause();
@@ -178,9 +180,8 @@
 
       try {
         const webcamVideo = document.querySelector('video:not(#Video_Asset_0)'); 
-        if (!webcamVideo) throw new Error("Câmera não iniciada.");
+        if (!webcamVideo) throw new Error("Câmera não encontrada.");
 
-        // Captura
         const canvas = document.getElementById('snapshotCanvas');
         const scale = 512 / webcamVideo.videoWidth;
         canvas.width = 512;
@@ -190,14 +191,24 @@
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
         const base64Image = canvas.toDataURL('image/jpeg', 0.6); 
 
-        // Envia para API Vercel
+        // Envia para o Backend na Vercel (Agora configurado corretamente)
+        // O fetch chama '/api/identify-color' sem extensão .js
         const response = await fetch('/api/identify-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64Image })
         });
 
-        if (!response.ok) throw new Error("Falha na IA. Verifique a API Key.");
+        if (!response.ok) {
+           let errorMsg = "Erro no servidor.";
+           try {
+              const errData = await response.json();
+              errorMsg = errData.error || errorMsg;
+           } catch(e) {
+              errorMsg = `Erro ${response.status} (Verifique se deletou vercel.json e package.json)`;
+           }
+           throw new Error(errorMsg);
+        }
 
         const data = await response.json();
         
@@ -208,16 +219,16 @@
         video.src = newSrc;
         video.load(); 
 
-        // --- LÓGICA DE POSICIONAMENTO E ANIMAÇÃO (CHAPINHA) ---
+        // ANIMAÇÃO CHAPINHA (ELÁSTICA)
         const videoHolder = document.getElementById('video-holder');
         
         // 1. Torna visível
         videoHolder.setAttribute('visible', 'true');
         
-        // 2. Reseta a posição para longe (Z = -10)
+        // 2. Reseta posição para longe
         videoHolder.setAttribute('position', '0 1.7 -10');
         
-        // 3. Aplica a animação "elástica" para vir para perto (Z = -4)
+        // 3. Aplica animação
         videoHolder.setAttribute('animation', {
           property: 'position',
           to: '0 1.7 -4',
@@ -236,7 +247,7 @@
 
       } catch (error) {
         console.error(error);
-        showNotification("Erro", "Não foi possível identificar.");
+        showNotification("Erro", error.message, true);
       } finally {
         loadingOverlay.style.display = 'none';
       }
@@ -256,23 +267,12 @@
 
     window.addEventListener('load', () => {
       const message = document.getElementById('initialMessage');
-      if (message) {
-        setTimeout(() => {
-          message.style.opacity = '0';
-          setTimeout(() => message.style.display = 'none', 500);
-        }, 5000); 
-      }
+      if (message) setTimeout(() => { message.style.display = 'none'; }, 5000);
     });
 
     playPauseButton.addEventListener('click', () => {
-      if (video.paused) {
-        video.muted = false; 
-        video.play();
-        updatePlayButtonState(true);
-      } else {
-        video.pause();
-        updatePlayButtonState(false);
-      }
+      if (video.paused) { video.muted = false; video.play(); updatePlayButtonState(true); } 
+      else { video.pause(); updatePlayButtonState(false); }
       playPauseButton.classList.add('rotating');
       setTimeout(() => playPauseButton.classList.remove('rotating'), 300);
     });
