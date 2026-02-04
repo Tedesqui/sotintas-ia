@@ -1,37 +1,36 @@
 export const config = {
-  maxDuration: 15, // Aumentei levemente o tempo pois a resposta é mais complexa
+  maxDuration: 10,
 };
 
 export default async function handler(request, response) {
+  // Corrige problema de CORS e Métodos
+  response.setHeader('Access-Control-Allow-Credentials', true);
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  response.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (request.method === 'OPTIONS') {
+    response.status(200).end();
+    return;
+  }
+
   if (request.method !== 'POST') {
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
     const { image } = request.body;
-
-    if (!image) {
-      return response.status(400).json({ error: 'Imagem não fornecida' });
-    }
-
     const apiKey = process.env.OPENAI_API_KEY;
 
-    if (!apiKey) {
-      return response.status(500).json({ error: 'Chave da API não configurada' });
-    }
+    if (!image) return response.status(400).json({ error: 'Imagem não fornecida' });
+    if (!apiKey) return response.status(500).json({ error: 'API Key não configurada' });
 
-    // --- MUDANÇA NO PROMPT ---
     const prompt = `
-      Você é um especialista em design de interiores e tintas. Analise a cor da parede nesta imagem.
-      
-      1. Identifique o NOME ESPECÍFICO da tonalidade (seja criativo e preciso, use termos de mercado como: Verde Musgo, Verde Oliva, Azul Marinho, Azul Royal, Branco Gelo, Branco Neve, Cinza Cimento, etc).
-      2. Identifique a CATEGORIA BASE para escolhermos o vídeo correto. As categorias possíveis são APENAS: [branco, azul, verde, amarelo, vermelho, cinza]. Se não for nenhuma, use 'padrao'.
-
-      Responda ESTRITAMENTE no formato JSON abaixo, sem blocos de código ou markdown:
-      {
-        "tonalidade": "Nome da Tonalidade Identificada",
-        "categoria": "categoria_base_em_minusculo"
-      }
+      Analise a cor da parede.
+      Responda ESTRITAMENTE um JSON:
+      { "tonalidade": "Nome Exato (ex: Azul Marinho)", "categoria": "azul" }
+      Categorias possiveis: [branco, azul, verde, amarelo, vermelho, cinza].
+      Se nada bater, use 'padrao'.
     `;
 
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -52,26 +51,17 @@ export default async function handler(request, response) {
           }
         ],
         max_tokens: 50,
-        response_format: { type: "json_object" } // Força a resposta em JSON
+        response_format: { type: "json_object" }
       })
     });
 
     const data = await openAiResponse.json();
+    if (data.error) throw new Error(data.error.message);
 
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
-
-    // Parse do JSON retornado pela IA
     const content = JSON.parse(data.choices[0].message.content);
-
-    return response.status(200).json({ 
-      tonalidade: content.tonalidade,
-      categoria: content.categoria
-    });
+    return response.status(200).json(content);
 
   } catch (error) {
-    console.error(error);
     return response.status(500).json({ error: error.message });
   }
 }
