@@ -22,19 +22,43 @@
       transition: opacity 0.5s;
     }
 
-    /* Botão Play/Pause (Canto Superior Esquerdo) */
+    /* --- Botão Play/Pause (Restaurado ao Original) --- */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
-      background-color: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px);
-      transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px;
-      padding: 8px 12px; color: white;
+      background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
+      transition: transform 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
+      display: inline-flex; align-items: center; gap: 4px; color: white;
     }
-    #playPauseButton:active { transform: scale(0.95); }
-    #playPauseButton .icon { font-size: 18px; color: #4ade80; } /* Verde neon */
-    #playPauseButton .text { font-size: 14px; font-weight: 600; }
+    /* Estados do botão (Tamanho dinâmico) */
+    #playPauseButton.is-playing { padding: 10px 20px; }
+    #playPauseButton.is-paused { padding: 2px 6px; }
 
-    /* --- NOVA NOTIFICAÇÃO (Substitui o Alert) --- */
+    /* Ícone e Texto */
+    #playPauseButton .icon { color: #28a745; transition: font-size 0.3s ease; }
+    #playPauseButton.is-playing .icon { font-size: 24px; margin-right: 5px; }
+    #playPauseButton.is-paused .icon { 
+      font-size: 44px; position: relative; bottom: 3px; left: 2px; 
+    }
+    #playPauseButton .text { font-size: 16px; color: white; }
+
+    #playPauseButton.rotating { transform: rotate(360deg); }
+    #playPauseButton:hover {
+      background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05);
+    }
+
+    /* --- Botão IA (Flutuante Inferior) --- */
+    #scanColorButton {
+      position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
+      z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white; border: none; border-radius: 50px;
+      padding: 14px 28px; font-weight: bold; font-size: 16px;
+      cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      display: flex; align-items: center; gap: 10px;
+      transition: transform 0.2s ease;
+    }
+    #scanColorButton:active { transform: translateX(-50%) scale(0.95); }
+
+    /* --- Notificação (Toast) --- */
     #notificationToast {
       position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
       background: rgba(255, 255, 255, 0.95); color: #1f2937;
@@ -49,19 +73,7 @@
     #notificationToast h3 { margin: 0 0 4px 0; font-size: 18px; color: #111827; }
     #notificationToast p { margin: 0; font-size: 14px; color: #4b5563; }
 
-    /* --- Botão IA (Flutuante Inferior) --- */
-    #scanColorButton {
-      position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
-      z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white; border: none; border-radius: 50px;
-      padding: 14px 28px; font-weight: bold; font-size: 16px;
-      cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-      display: flex; align-items: center; gap: 10px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    #scanColorButton:active { transform: translateX(-50%) scale(0.95); }
-
-    /* --- Loading Overlay Moderno --- */
+    /* --- Loading Overlay --- */
     #loadingOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
@@ -82,10 +94,12 @@
       background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
     }
     #footerSocial a { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: transform 0.2s; }
-    #footerSocial a:active { transform: scale(0.9); }
+    #footerSocial a:hover { transform: scale(1.1); }
     #footerSocial svg { width: 100%; height: 100%; drop-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    #footerSocial .facebook svg { fill: #3b5998; }
-    #footerSocial .instagram svg { fill: #d62976; }
+    
+    /* Cores Restauradas */
+    #footerSocial .facebook svg { fill: #00008B; }
+    #footerSocial .instagram svg { fill: #833AB4; } /* Roxo original */
     #footerSocial .whatsapp svg { fill: #25D366; }
   </style>
 </head>
@@ -120,17 +134,16 @@
 
   <canvas id="snapshotCanvas" style="display:none;"></canvas>
 
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;" vr-mode-ui="enabled: false">
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
     <a-assets>
       <video id="Video_Asset_0" src="videos/celia.mp4" playsinline webkit-playsinline loop crossorigin="anonymous"></video>
     </a-assets>
 
-    <a-entity id="video-holder" position="0 0 -100" visible="false">
-      <a-plane width="3.2" height="3.2" color="black" opacity="0.4" position="0 0 -0.1"></a-plane>
-      <a-video width="3" height="3" src="#Video_Asset_0" color="#FFFFFF" loop></a-video>
+    <a-entity id="video-holder" position="0 1.6 -4" scale="0 0 0" look-at="[camera]">
+       <a-video width="3" height="3" src="#Video_Asset_0" color="#FFFFFF" loop></a-video>
     </a-entity>
 
-    <a-camera look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
+    <a-camera gps-camera rotation-reader></a-camera>
   </a-scene>
 
   <div id="footerSocial">
@@ -155,58 +168,56 @@
     const scanButton = document.getElementById('scanColorButton');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
-    const videoHolder = document.getElementById('video-holder');
 
-    // --- SISTEMA DE NOTIFICAÇÃO (TOAST) ---
+    // --- NOTIFICAÇÃO (TOAST) ---
     function showNotification(title, message) {
       const toast = document.getElementById('notificationToast');
       document.getElementById('toastTitle').innerText = title;
       document.getElementById('toastMessage').innerText = message;
-      
       toast.classList.add('show');
-      
-      // Esconde automaticamente após 4 segundos
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 4000);
+      setTimeout(() => { toast.classList.remove('show'); }, 4000);
     }
 
-    // --- POSICIONAMENTO INTELIGENTE ---
-    function repositionVideoToFront() {
-      // Pega a câmera e o objeto do vídeo (Three.js objects)
-      const cameraEl = document.querySelector('a-camera');
+    // --- REPOSICIONAMENTO DO VÍDEO NA FRENTE DO USUÁRIO ---
+    function placeVideoInFront() {
       const videoEl = document.querySelector('#video-holder');
-      
-      if (!cameraEl || !videoEl) return;
+      const cameraEl = document.querySelector('a-camera');
 
+      if (!videoEl || !cameraEl) return;
+
+      // 1. Pega a posição e rotação da câmera
       const cameraObj = cameraEl.object3D;
-      const videoObj = videoEl.object3D;
-
-      // 1. Pega a posição e direção da câmera no mundo 3D
       const position = new THREE.Vector3();
       const direction = new THREE.Vector3();
       
       cameraObj.getWorldPosition(position);
       cameraObj.getWorldDirection(direction);
 
-      // 2. Calcula um ponto 2.5 metros a frente do usuário
-      // Multiplica o vetor direção por -2.5 (negativo pois no WebGL o eixo Z frontal é negativo)
-      direction.multiplyScalar(2.5); 
+      // 2. Calcula posição 4 metros à frente
+      // Multiplica direção por -4 (eixo Z é invertido no WebGL)
+      direction.multiplyScalar(4); 
       position.add(direction); 
-
-      // 3. Aplica a nova posição ao vídeo
-      videoObj.position.copy(position);
-
-      // 4. Faz o vídeo "olhar" para a câmera (billboard effect)
-      // Ajuste fino para não rodar no eixo errado
-      videoObj.lookAt(cameraObj.position.x, cameraObj.position.y, cameraObj.position.z);
       
-      // 5. Torna visível
-      videoEl.setAttribute('visible', 'true');
+      // Ajuste de altura para ficar no nível dos olhos aprox
+      // Se a câmera estiver muito baixa/alta, normaliza um pouco
+      position.y = cameraObj.position.y + 0.5; 
+
+      // 3. Aplica ao vídeo
+      videoEl.object3D.position.copy(position);
+      
+      // 4. Faz o vídeo virar para a câmera
+      videoEl.object3D.lookAt(cameraObj.position);
+      
+      // 5. Animação de entrada (Escala de 0 para 1)
+      videoEl.setAttribute('animation', {
+        property: 'scale',
+        to: '1 1 1',
+        dur: 1000,
+        easing: 'easeOutElastic'
+      });
     }
 
     // --- LÓGICA PRINCIPAL ---
-
     scanButton.addEventListener('click', async () => {
       if (!video.paused) {
         video.pause();
@@ -238,45 +249,47 @@
         });
 
         if (!response.ok) {
-           throw new Error("Falha na conexão com a IA.");
+           throw new Error("Erro de conexão com servidor.");
         }
 
         const data = await response.json();
         
         // --- SUCESSO ---
         
-        // 1. Mostra a notificação bonita
         showNotification(
           data.tonalidade.toUpperCase(), 
-          `Selecionamos um vídeo para ${data.categoria.toUpperCase()}.`
+          `Base: ${data.categoria.toUpperCase()}.`
         );
 
-        // 2. Traz o vídeo para a frente do usuário
-        repositionVideoToFront();
-
-        // 3. Configura o vídeo
+        // Configura o source do vídeo
         const cleanCategory = data.categoria.toLowerCase().trim();
         const newSrc = colorVideoMap[cleanCategory] || colorVideoMap['padrao'];
         video.src = newSrc;
         video.load(); 
-        
-        // 4. Play
-        video.play().then(() => {
-          updatePlayButtonState(true);
-        }).catch(e => {
-          updatePlayButtonState(false);
-        });
+
+        // Traz o vídeo para a frente e faz ele aparecer
+        placeVideoInFront();
+
+        // Play
+        // Pequeno delay para garantir que o load() terminou
+        setTimeout(() => {
+          video.play().then(() => {
+            updatePlayButtonState(true);
+          }).catch(e => {
+            console.log("Autoplay bloqueado pelo navegador");
+            updatePlayButtonState(false);
+          });
+        }, 500);
 
       } catch (error) {
         console.error(error);
-        showNotification("Ops!", "Não foi possível identificar a cor. Tente novamente.");
+        showNotification("Erro", "Não foi possível identificar.");
       } finally {
         loadingOverlay.style.display = 'none';
       }
     });
 
-    // --- Controles de UI ---
-
+    // --- Controles UI ---
     function updatePlayButtonState(isPlaying) {
       if (isPlaying) {
         playPauseButton.innerHTML = '<span class="icon">⏸︎</span> <span class="text">Pause</span>';
@@ -308,6 +321,8 @@
         video.pause();
         updatePlayButtonState(false);
       }
+      playPauseButton.classList.add('rotating');
+      setTimeout(() => playPauseButton.classList.remove('rotating'), 300);
     });
   </script>
 </body>
