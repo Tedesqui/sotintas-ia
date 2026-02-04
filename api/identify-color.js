@@ -1,8 +1,7 @@
 // api/identify-color.js
-// Usando sintaxe padrão do Node.js para compatibilidade máxima
 
 module.exports = async (req, res) => {
-  // 1. Configurar CORS manualmente (Para aceitar requisições do seu site)
+  // Configuração de CORS (Essencial para não ser bloqueado)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -11,31 +10,30 @@ module.exports = async (req, res) => {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // 2. Responder imediatamente ao "Preflight" (OPTIONS) do navegador
+  // Responde rápido para requisições de verificação (preflight)
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // 3. Bloquear qualquer coisa que não seja POST
+  // Garante que só aceita POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido. Use POST.' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
     const { image } = req.body;
+    // Pega a chave das Variáveis de Ambiente da Vercel
     const apiKey = process.env.OPENAI_API_KEY;
 
-    if (!image) return res.status(400).json({ error: 'Imagem não recebida.' });
-    if (!apiKey) return res.status(500).json({ error: 'Chave da API não configurada na Vercel.' });
+    if (!image) return res.status(400).json({ error: 'Imagem não fornecida' });
+    if (!apiKey) return res.status(500).json({ error: 'Chave API não configurada' });
 
-    // 4. Chamada à OpenAI
     const prompt = `
-      Você é um especialista em tintas. Analise a cor da parede nesta imagem.
-      Responda APENAS com este JSON exato, sem markdown:
-      { "tonalidade": "Nome Criativo da Cor", "categoria": "cor_base" }
-      
-      As categorias permitidas são APENAS: [branco, azul, verde, amarelo, vermelho, cinza].
+      Analise a cor da parede.
+      Responda ESTRITAMENTE um JSON:
+      { "tonalidade": "Nome da Cor", "categoria": "cor_base" }
+      Categorias permitidas: [branco, azul, verde, amarelo, vermelho, cinza].
       Se não identificar, use "padrao".
     `;
 
@@ -56,31 +54,26 @@ module.exports = async (req, res) => {
             ]
           }
         ],
-        max_tokens: 60,
+        max_tokens: 50,
         response_format: { type: "json_object" }
       })
     });
 
     const data = await openAiResponse.json();
+    
+    if (data.error) throw new Error(data.error.message);
 
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
-
-    // 5. Tratamento de resposta
+    // Tenta fazer o parse do conteúdo
     let content;
     try {
-      content = JSON.parse(data.choices[0].message.content);
+        content = JSON.parse(data.choices[0].message.content);
     } catch (e) {
-      // Caso a IA não mande JSON perfeito, forçamos um fallback
-      console.error("Erro ao ler JSON da IA:", data.choices[0].message.content);
-      content = { tonalidade: "Cor Identificada", categoria: "padrao" };
+        content = { tonalidade: "Cor Identificada", categoria: "padrao" };
     }
 
     return res.status(200).json(content);
 
   } catch (error) {
-    console.error("Erro no Backend:", error);
-    return res.status(500).json({ error: error.message || "Erro interno no servidor." });
+    return res.status(500).json({ error: error.message });
   }
 };
