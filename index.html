@@ -21,11 +21,9 @@
       transition: opacity 0.5s;
     }
 
-    /* Botão Play/Pause - Estático (Sem girar) */
     #playPauseButton {
       position: fixed; top: 20px; left: 20px; z-index: 999;
       background-color: rgba(0, 0, 0, 0.42); border: none; border-radius: 5px; cursor: pointer;
-      /* Removida animação de transform */
       transition: background-color 0.3s ease, padding 0.3s ease;
       display: inline-flex; align-items: center; gap: 4px; color: white;
     }
@@ -36,7 +34,6 @@
     #playPauseButton .text { font-size: 16px; color: white; }
     #playPauseButton:hover { background-color: rgba(0, 0, 0, 0.6); transform: scale(1.05); }
 
-    /* Botão IA (Fundo da tela) */
     #scanColorButton {
       position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
       z-index: 999; background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -48,36 +45,23 @@
     }
     #scanColorButton:active { transform: translateX(-50%) scale(0.95); }
 
-    /* Notificação Toast (AGORA EMBAIXO) */
+    /* Notificação Embaixo (Acima do Botão) */
     #notificationToast {
       position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      /* Posição inicial: Escondido atrás do botão ou fora da tela */
-      bottom: 50px; 
-      opacity: 0;
-      
+      left: 50%; transform: translateX(-50%);
+      bottom: 50px; opacity: 0;
       background: rgba(255, 255, 255, 0.95); color: #1f2937;
       padding: 16px 24px; border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       z-index: 2000; width: 85%; max-width: 350px; text-align: center;
       border-left: 5px solid #3b82f6;
-      
-      /* Animação suave */
       transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
-
-    #notificationToast.show {
-      /* Posição Final: Flutuando ACIMA do botão de scan */
-      bottom: 180px; 
-      opacity: 1;
-    }
-    
+    #notificationToast.show { bottom: 180px; opacity: 1; }
     #notificationToast.error { border-left-color: #ef4444; }
     #notificationToast h3 { margin: 0 0 4px 0; font-size: 18px; color: #111827; }
-    #notificationToast p { margin: 0; font-size: 14px; color: #4b5563; }
+    #notificationToast p { margin: 0; font-size: 14px; color: #4b5563; font-weight: bold; }
 
-    /* Loading Overlay */
     #loadingOverlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
@@ -91,7 +75,6 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* Footer Social */
     #footerSocial {
       position: fixed; bottom: 0; left: 0; right: 0; padding: 20px 0;
       display: flex; justify-content: center; gap: 40px; z-index: 999;
@@ -111,7 +94,7 @@
   
   <div id="notificationToast">
     <h3 id="toastTitle">Sucesso</h3>
-    <p id="toastMessage">Cor identificada.</p>
+    <p id="toastMessage"></p>
   </div>
 
   <div id="loadingOverlay">
@@ -128,13 +111,9 @@
   </button>
 
   <button id="scanColorButton">
-    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-    </svg>
+    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
     Identificar Cor
   </button>
-
   <canvas id="snapshotCanvas" style="display:none;"></canvas>
 
   <a-scene vr-mode-ui="enabled: false">
@@ -143,7 +122,7 @@
     </a-assets>
 
     <a-entity id="video-holder" visible="false">
-       <a-video width="3" height="4" src="#Video_Asset_0" look-at="[camera]" color="#FFFFFF"></a-video>
+       <a-video width="2.25" height="4" src="#Video_Asset_0" look-at="[camera]" color="#FFFFFF"></a-video>
     </a-entity>
 
     <a-camera id="camera1"></a-camera>
@@ -181,42 +160,34 @@
       setTimeout(() => { toast.classList.remove('show'); }, 5000);
     }
 
-    // --- POSICIONAMENTO DINÂMICO (NA FRENTE DO OLHAR) ---
+    // --- POSICIONAMENTO ---
     function placeVideoInFront() {
         const cameraEl = document.querySelector('a-camera');
         const videoEntity = document.querySelector('#video-holder');
         const cameraObj = cameraEl.object3D;
 
-        // 1. Cria vetor apontando para frente (eixo Z negativo)
+        // Calcula direção e posição
         const direction = new THREE.Vector3(0, 0, -1);
-        
-        // 2. Aplica rotação da câmera
         direction.applyQuaternion(cameraObj.quaternion);
-        
-        // 3. Ignora inclinação vertical para o vídeo ficar "em pé" no mundo
         direction.y = 0;
         direction.normalize();
 
-        // 4. Distâncias
-        const startDistance = 15; // Começa longe
-        const endDistance = 7;    // Termina a 7 metros
+        const startDistance = 15; 
+        const endDistance = 7;
 
-        // 5. Calcula posições
         const startPos = new THREE.Vector3();
         startPos.copy(cameraObj.position).addScaledVector(direction, startDistance);
         
         const endPos = new THREE.Vector3();
         endPos.copy(cameraObj.position).addScaledVector(direction, endDistance);
 
-        // Altura fixa (olhos)
         startPos.y = 1.7;
         endPos.y = 1.7;
 
-        // 6. Aplica
         videoEntity.setAttribute('position', startPos);
         videoEntity.setAttribute('visible', 'true');
 
-        // 7. Animação Elástica
+        // Animação
         videoEntity.removeAttribute('animation');
         videoEntity.setAttribute('animation', {
             property: 'position',
@@ -227,7 +198,15 @@
     }
 
     scanButton.addEventListener('click', async () => {
-      if (!video.paused) { video.pause(); updatePlayButtonState(false); }
+      // 1. ESCONDE O VÍDEO ATUAL IMEDIATAMENTE
+      const videoHolder = document.getElementById('video-holder');
+      videoHolder.setAttribute('visible', 'false');
+      
+      if (!video.paused) { 
+          video.pause(); 
+          updatePlayButtonState(false); 
+      }
+      
       loadingOverlay.style.display = 'flex';
 
       try {
@@ -242,7 +221,6 @@
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
         const base64Image = canvas.toDataURL('image/jpeg', 0.6); 
 
-        // Requisição para Backend
         const response = await fetch('/api/identify-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -256,14 +234,15 @@
 
         const data = await response.json();
         
-        showNotification(data.tonalidade.toUpperCase(), `Base: ${data.categoria.toUpperCase()}`);
+        // TEXTO DA NOTIFICAÇÃO ALTERADO
+        showNotification("Cor Identificada:", data.tonalidade.toUpperCase());
 
         const cleanCategory = data.categoria.toLowerCase().trim();
         const newSrc = colorVideoMap[cleanCategory] || colorVideoMap['padrao'];
         video.src = newSrc;
         video.load(); 
 
-        // Posiciona o vídeo na frente
+        // Posiciona e Anima
         placeVideoInFront();
 
         setTimeout(() => {
@@ -289,6 +268,11 @@
         playPauseButton.classList.add('is-paused');
       }
     }
+
+    // Detector de fim do vídeo (Sem Loop)
+    video.addEventListener('ended', () => {
+       updatePlayButtonState(false);
+    });
 
     window.addEventListener('load', () => {
       const message = document.getElementById('initialMessage');
